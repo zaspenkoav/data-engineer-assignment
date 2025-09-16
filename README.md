@@ -1,22 +1,23 @@
-# Senior Data Engineer Assignment: Marketing Attribution Pipeline
+# Data Engineer Assignment: Marketing Attribution Pipeline
 
-Build a marketing attribution system using **Dagster** and **dbt** to solve real-world attribution modeling challenges.
+Build a data pipeline for marketing attribution using **Dagster** and **dbt**.
 
 ## 📋 Assignment Overview
 
-**Time Allocation**: 8-12 hours  
-**Level**: Senior Data Engineer  
-**Objective**: Build complete attribution pipeline using modern data stack  
-**Focus Areas**: dbt transformations, Dagster orchestration, attribution modeling
+**Time Allocation**: 8-12 hours
+**Level**: Senior Data Engineer
+**Task**: Build automated data pipeline for marketing attribution
+**Technology Stack**: dbt (transformations) + Dagster (orchestration)
 
-## 🎯 What You'll Build
+## 🎯 Engineering Task
 
-Create a marketing attribution system that:
-1. Processes marketing events and purchase transactions
-2. Links marketing touchpoints to revenue using attribution logic  
-3. Implements First-Touch and Last-Touch attribution models
-4. Generates channel performance analytics
-5. Uses **dbt** for transformations and **Dagster** for orchestration
+Implement data pipeline that:
+
+1. Processes raw marketing events and purchase data
+2. Creates staging models with data validation
+3. Builds attribution mart tables according to specifications
+4. Orchestrates transformations through Dagster assets
+5. Includes data quality checks and testing
 
 ## 📊 Data Overview
 
@@ -53,28 +54,24 @@ Client dimension data:
 - `cohort` - Registration cohort (e.g., "2023-Q1")
 - `customer_segment` - Client segment (new_customer, returning_customer, vip_customer)
 
-## 🎯 Attribution Models Explained
+## 🎯 Attribution Models (Business Context)
 
 ### First-Touch Attribution
-- **Definition**: 100% credit to first marketing touchpoint before purchase
-- **Use Case**: Brand awareness, top-of-funnel optimization  
-- **Logic**: Find earliest non-direct marketing event within 30-day window
+**Definition**: Credit full purchase revenue to the first marketing touchpoint in customer journey
 
 ### Last-Touch Attribution
-- **Definition**: 100% credit to last marketing touchpoint before purchase
-- **Use Case**: Conversion optimization, bottom-of-funnel analysis
-- **Logic**: Find latest non-direct marketing event before purchase
+**Definition**: Credit full purchase revenue to the last marketing touchpoint before purchase
 
-### Attribution Window
-- **30 Days**: Look back 30 days from purchase time
-- **Cross-Session**: Link events across multiple client sessions
-- **Direct Channel**: Exclude 'direct' visits from attribution (unless only channel)
+### Business Rules to Implement
+- **Attribution Window**: 30 days before purchase
+- **Cross-Session Tracking**: Link events by client_id across sessions
+- **Direct Traffic**: Handle customers with no marketing touchpoints
 
 ## 🛠 Technical Setup
 
 **You are free to choose:**
 - Database (PostgreSQL recommended)
-- Infrastructure setup (Docker, local, cloud)
+- Infrastructure setup (Docker, local)
 - Dependencies and versions
 - Project structure and organization
 
@@ -83,175 +80,145 @@ Client dimension data:
 - Dagster (orchestration)
 - SQL database for results
 
-## 🎯 Core Requirements
+## 🎯 Technical Requirements
 
-### 1. dbt Data Modeling (40 points)
+### Required Data Models
 
-**Staging Models**: Clean and validate raw data
-- `stg_events` - Clean and typed event data (both page_view and purchase)
-- `stg_clients` - Client dimension data
+#### Staging Layer
 
-**Mart Models**: Attribution business logic
-- `client_journeys` - Complete client paths from first touch to purchase
-- `first_touch_attribution` - Revenue attributed to first marketing touch
-- `last_touch_attribution` - Revenue attributed to last marketing touch
-- `channel_performance` - Performance metrics by marketing channel
+- `stg_events` - Cleaned and validated event data
+- `stg_clients` - Client dimension table
 
-### 2. Attribution Logic (35 points)
-- **Attribution Window**: 30-day lookback from purchase
-- **First-Touch Model**: Credit first marketing touch in journey (exclude 'direct')
-- **Last-Touch Model**: Credit last marketing touch in journey (exclude 'direct')
-- **Cross-Session Tracking**: Link events across client sessions
-- **Direct Channel Handling**: Only attribute to 'direct' if no other channels exist
+#### Data Marts
 
-### 3. Dagster Orchestration & Testing (25 points)
-- **Asset-based Pipeline**: Use Dagster assets paradigm
-- **dbt Integration**: Orchestrate dbt models with Dagster
-- **Data Quality Checks**: Validate data after transformations
-- **Dependency Management**: Proper asset dependencies
+- `first_touch_attribution` - Attribution to first marketing touchpoint
+- `last_touch_attribution` - Attribution to last marketing touchpoint
+- `channel_performance` - Aggregated channel metrics
 
-## 🔍 Key Business Questions
+### Pipeline Architecture
 
-Your attribution pipeline should answer:
+- **dbt Models**: SQL transformations for data processing
+- **Dagster Assets**: Orchestration and dependency management
+- **Data Quality**: Validation checks and tests
+- **Documentation**: Model descriptions and business logic
 
-```sql
--- Which channel drives the most first-touch revenue?
-SELECT
-    channel,
-    SUM(attributed_revenue) as first_touch_revenue,
-    COUNT(DISTINCT client_id) as attributed_clients
-FROM marts.first_touch_attribution
-GROUP BY channel
-ORDER BY first_touch_revenue DESC;
+## 📊 Required Output Data Structure
 
--- What's the typical customer journey length?
-SELECT
-    journey_length_days,
-    COUNT(*) as client_count,
-    AVG(total_revenue) as avg_revenue
-FROM marts.client_journeys
-GROUP BY journey_length_days
-ORDER BY journey_length_days;
+### first_touch_attribution
 
--- Raw data: Page views vs Purchases by channel
-SELECT
-    event_type,
-    channel,
-    COUNT(*) as event_count,
-    COUNT(DISTINCT client_id) as unique_clients,
-    SUM(revenue) as total_revenue
-FROM {{ ref('stg_events') }}
-GROUP BY event_type, channel
-ORDER BY event_type, total_revenue DESC;
-
--- How do first-touch vs last-touch attribution compare?
-SELECT
-    ft.channel as first_touch_channel,
-    lt.channel as last_touch_channel,
-    COUNT(*) as journey_count,
-    AVG(ft.attributed_revenue) as avg_first_touch_revenue,
-    AVG(lt.attributed_revenue) as avg_last_touch_revenue
-FROM marts.first_touch_attribution ft
-JOIN marts.last_touch_attribution lt USING (client_id, event_time)
-GROUP BY ft.channel, lt.channel
-ORDER BY journey_count DESC;
+```text
+client_id (string) - Client identifier
+purchase_time (timestamp) - When purchase occurred
+attributed_channel (string) - Channel receiving attribution credit
+attributed_revenue (decimal) - Revenue amount attributed
+first_touch_time (timestamp) - Time of first marketing touchpoint
+days_to_conversion (integer) - Days from first touch to purchase
 ```
 
-## 📊 Evaluation Criteria (100 points total)
+### last_touch_attribution
 
-### Technical Implementation (40 points)
-- **dbt Best Practices** (15 points): Proper staging/mart structure, tests, documentation
-- **Code Quality** (10 points): Clean, readable, maintainable SQL and Python
-- **Data Quality** (10 points): Comprehensive validation and testing
-- **Performance** (5 points): Efficient queries for large datasets
-
-### Attribution Logic Correctness (35 points)
-- **Attribution Models** (15 points): Accurate implementation of first-touch and last-touch
-- **Business Rules** (10 points): Proper channel mapping and window logic
-- **Edge Cases** (10 points): Handling of complex client journeys
-
-### Dagster Architecture & Documentation (25 points)
-- **Asset Design** (10 points): Proper asset-based architecture and dependencies
-- **Documentation** (10 points): Clear README, model descriptions, business logic explanation
-- **Testing** (5 points): dbt tests and data quality validations
-
-### Scoring Guide:
-- **90-100 points**: Exceptional - Senior+ level
-- **80-89 points**: Strong - Senior level
-- **70-79 points**: Good - Senior- level
-- **60-69 points**: Adequate - Middle+ level
-- **Below 60**: Needs improvement
-
-## 🚨 Technical Challenges
-
-1. **Multi-Touch Journeys**: Clients may have complex paths with multiple channels
-2. **Session Stitching**: Linking events across different client sessions
-3. **Attribution Windows**: Correctly implementing 30-day lookback logic
-4. **Channel Prioritization**: Handling cases where multiple touchpoints exist
-5. **Data Quality**: Dealing with missing UTM parameters, invalid timestamps
-6. **Performance**: Optimizing attribution queries for scale
-
-## 💡 Implementation Tips
-
-### dbt Best Practices
-```sql
--- Use explicit column selection
-SELECT
-    client_id,
-    event_time,
-    channel
-FROM {{ ref('stg_events') }}
-
--- Add data quality tests
-version: 2
-models:
-  - name: first_touch_attribution
-    tests:
-      - not_null:
-          column_name: client_id
-      - relationships:
-          to: ref('stg_clients')
-          field: client_id
+```text
+client_id (string) - Client identifier
+purchase_time (timestamp) - When purchase occurred
+attributed_channel (string) - Channel receiving attribution credit
+attributed_revenue (decimal) - Revenue amount attributed
+last_touch_time (timestamp) - Time of last marketing touchpoint
+days_to_conversion (integer) - Days from last touch to purchase
 ```
 
-### Dagster Assets
-```python
-@asset(deps=[dbt_assets])
-def attribution_quality_check():
-    """Validate attribution model outputs"""
-    # Implementation here
+### channel_performance
+
+```text
+channel (string) - Marketing channel name
+first_touch_revenue (decimal) - Total revenue via first-touch model
+last_touch_revenue (decimal) - Total revenue via last-touch model
+total_conversions (integer) - Number of attributed purchases
+unique_clients (integer) - Number of unique clients attributed
 ```
 
-## ❓ FAQ
+## 📊 Evaluation Areas
 
-**Q: Which attribution model is more important?**
-A: Implement both. Different models serve different business purposes.
+### Technical Implementation
 
-**Q: How do I handle clients with no marketing touches?**
-A: Credit to 'direct' channel or create 'organic' attribution.
+- **dbt Structure**: Proper staging/mart organization and SQL quality
+- **Dagster Integration**: Asset-based architecture and orchestration
+- **Data Quality**: Comprehensive testing and validation
+- **Code Quality**: Readable, maintainable implementation
 
-**Q: What if a client has purchases outside the attribution window?**
-A: Only attribute purchases within 30 days of marketing touches.
+### Business Logic Accuracy
 
-**Q: Should I handle mobile app vs web events differently?**
-A: Treat them the same unless explicitly specified otherwise.
+- **Attribution Models**: Correct first-touch and last-touch implementation
+- **Business Rules**: 30-day window, cross-session tracking
+- **Edge Cases**: Handling clients with no touchpoints, direct traffic
 
-## 📬 Submission Checklist
+### Engineering Excellence
 
-- [ ] dbt project with all required models
-- [ ] Dagster orchestration working end-to-end
-- [ ] Database populated with attribution results
-- [ ] README with your approach and assumptions
-- [ ] At least basic dbt tests implemented
-- [ ] Pipeline runs successfully via `dagster dev`
+- **Pipeline Design**: Scalable and maintainable architecture
+- **Documentation**: Clear setup instructions and business logic
+- **Testing**: dbt tests and Dagster validations
 
-### 🎯 Bonus Points
-- Unit testing pipeline components
-- CI/CD setup with GitHub Actions
-- Advanced Dagster features (sensors, schedules)
-- Additional analytics insights
-- Performance optimizations
+## 🚨 Implementation Considerations
+
+### Data Engineering Challenges
+
+1. **Cross-Session Linking**: Events from same client across multiple sessions
+2. **Time Window Logic**: 30-day attribution window implementation
+3. **Data Validation**: Handle missing/invalid data appropriately
+4. **Dependency Management**: Correct model build order
+5. **Performance**: Efficient processing for production scale
+
+### Expected Edge Cases
+
+- Clients with purchases but no marketing events
+- Multiple purchases from same client
+- Events outside attribution window
+- Missing or malformed timestamps
+- Direct traffic handling
+
+## ❓ Technical FAQ
+
+**Q: How to handle clients with no marketing touchpoints?**
+A: Design solution for attribution when only direct traffic exists.
+
+**Q: Multiple purchases from same client?**
+A: Each purchase should have independent attribution calculation.
+
+**Q: What constitutes a valid marketing touchpoint?**
+A: Events within 30-day window before purchase with non-direct channel.
+
+**Q: How to link events across sessions?**
+A: Use client_id as the primary identifier for cross-session tracking.
+
+## 📬 Deliverables
+
+### Required Components
+- [ ] Complete dbt project with staging and mart models
+- [ ] Dagster assets for pipeline orchestration
+- [ ] Database populated with all required tables
+- [ ] README with setup instructions and architecture decisions
+- [ ] dbt tests for data quality validation
+- [ ] Working pipeline via `dagster dev`
+
+### Project Structure
+
+```text
+project/
+├── dbt_project.yml
+├── models/
+│   ├── staging/
+│   └── marts/
+├── dagster_project/
+├── README.md
+└── docker-compose.yml (optional)
+```
+
+### Success Criteria
+
+- Pipeline runs end-to-end without errors
+- All required tables populated with correct structure
+- Attribution logic handles edge cases appropriately
+- Code is well-documented and maintainable
 
 ---
 
-**Focus on building solid attribution logic first, then add advanced features. Good luck! 🚀**
+## Focus: Build robust, production-ready data pipeline infrastructure 🔧
