@@ -1,0 +1,19 @@
+# Приватные материалы - НЕ должны попасть в GitHub
+solutions/
+evaluation/
+docs/internal/
+sample-submissions/
+*.key
+*.secret
+.env
+.env.*
+
+# Временные файлы
+*.tmp
+*.bak
+*~
+
+# Локальные заметки
+notes.md
+TODO.md
+private_*
