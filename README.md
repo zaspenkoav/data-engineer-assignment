@@ -221,7 +221,14 @@ Some questions to consider:
 
 ## Questions?
 
-If you need clarifications on business requirements - just ask!
+If you have questions about the assignment - feel free to ask!
+
+💬 **Ask via GitHub Issues:** [Create an issue](https://github.com/zaspenkoav/data-engineer-assignment/issues/new)
+
+**Why GitHub Issues?**
+- Your question might help other candidates
+- Faster response time
+- Structured discussion
 
 We're evaluating your **data engineering skills and architectural thinking**, not your ability to guess requirements.
 
